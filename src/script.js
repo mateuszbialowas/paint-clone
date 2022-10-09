@@ -4,10 +4,8 @@ var tmp_canvas = document.createElement("canvas");
 tmp_canvas.style.position = "absolute";
 tmp_canvas.style.top = "1px";
 tmp_canvas.style.left = "1px";
-
 canvas.width = sketch.offsetWidth;
 canvas.height = sketch.offsetHeight;
-
 tmp_canvas.width = canvas.width;
 tmp_canvas.height = canvas.height;
 
@@ -33,6 +31,11 @@ var start_mouse = { x: 0, y: 0 };
 
 // Pencil Points
 var ppts = [];
+form_mode = false;
+
+document.getElementById("form_mode_toggle").addEventListener("click", function () {
+  form_mode = !form_mode;
+});
 
 /* Drawing on Paint App */
 tmp_ctx.lineWidth = 3;
@@ -153,24 +156,19 @@ tmp_canvas.addEventListener(
     start_mouse.y = mouse.y;
     tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
 
-    if (tool === "pencil") {
+    if (form_mode) {
+      console.log("asdf");
+    } else if (tool === "pencil") {
       tmp_canvas.addEventListener("mousemove", paint_pencil, false);
       ppts.push({ x: mouse.x, y: mouse.y });
       paint_pencil(e);
-    }
-
-    if (tool === "line") {
+    } else if (tool === "line") {
       tmp_canvas.addEventListener("mousemove", paint_line, false);
-    }
-
-    if (tool === "rectangle") {
+    } else if (tool === "rectangle") {
       tmp_canvas.addEventListener("mousemove", paint_rectangle, false);
-    }
-
-    if (tool === "circle") {
+    } else if (tool === "circle") {
       tmp_canvas.addEventListener("mousemove", paint_circle, false);
       // Mark the center
-
       tmp_ctx.beginPath();
       //ctx.moveTo(b.x, b.y);
       //ctx.lineTo(b.x+50, b.y+50);
