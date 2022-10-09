@@ -37,29 +37,23 @@
               </div>
               <div id="tools_box" class="flex items-center gap-4">
                 <div
-                  id="draw"
+                  id="pencil"
                   class="p-6 rounded shadow-md cursor-pointer ring ring-violet-300"
                 >
                   Draw
                 </div>
 
                 <div
-                  id="rectangle_mode_button"
+                  id="rectangle"
                   class="p-6 rounded shadow-md cursor-pointer"
                 >
                   Rectangle
                 </div>
 
-                <div
-                  id="circle_mode_button"
-                  class="p-6 rounded shadow-md cursor-pointer"
-                >
+                <div id="circle" class="p-6 rounded shadow-md cursor-pointer">
                   Circle
                 </div>
-                <div
-                  id="line"
-                  class="p-6 rounded shadow-md cursor-pointer"
-                >
+                <div id="line" class="p-6 rounded shadow-md cursor-pointer">
                   Line
                 </div>
               </div>
@@ -67,14 +61,11 @@
             <div
               class="bg-white col-span-3 p-4 row-span-6 shadow-md rounded-3xl"
             >
-              <canvas
-                id="canvas_paint"
-                width="600px"
-                height="600px"
-                class="border"
-              >
-                Your browser does not support the canvas element.
-              </canvas>
+              <div id="sketch" class="relative h-full">
+                <canvas id="canvas" class="border">
+                  Your browser does not support the canvas element.
+                </canvas>
+              </div>
             </div>
             <div class="bg-white p-4 row-span-6 shadow-md rounded"></div>
           </div>
