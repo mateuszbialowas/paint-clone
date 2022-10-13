@@ -195,16 +195,6 @@ tmp_canvas.addEventListener(
   false
 );
 
-var next_undo_canvas = function (top) {
-  if (top === undo_canvas_len - 1) return 0;
-  else return top + 1;
-};
-
-var prev_undo_canvas = function (top) {
-  if (top === 0) return undo_canvas_len - 1;
-  else return top - 1;
-};
-
 // handle css for choosen tool
 tools_box = document.getElementById("tools_box");
 tools = tools_box.children;
@@ -231,6 +221,12 @@ document.getElementById("rectangle_form").addEventListener("submit", (e) => {
     values[inputs[i].name] = inputs[i].value;
   }
   draw_rectangle(values["x"], values["y"], values["width"], values["height"]);
+  rectangle_pts.push({
+    x: values["x"],
+    y: values["y"],
+    width: values["width"],
+    height: values["height"],
+  });
 });
 
 document.getElementById("circle_form").addEventListener("submit", (e) => {
@@ -242,6 +238,7 @@ document.getElementById("circle_form").addEventListener("submit", (e) => {
     values[inputs[i].name] = inputs[i].value;
   }
   draw_circle(values["x"], values["y"], values["radius"]);
+  circle_pts.push({ x: values["x"], y: values["y"], radius: values["radius"] });
 });
 
 document.getElementById("line_form").addEventListener("submit", (e) => {
@@ -253,11 +250,15 @@ document.getElementById("line_form").addEventListener("submit", (e) => {
     values[inputs[i].name] = inputs[i].value;
   }
   draw_line(values["x1"], values["y1"], values["x2"], values["y2"]);
+  line_pts.push({
+    x1: values["x1"],
+    y1: values["y1"],
+    x2: values["x2"],
+    y2: values["y2"],
+  });
 });
 
 document.getElementById("save_to_file").addEventListener("click", (e) => {
-  // find file canva_data.json and save pencil_pts, line_pts, rectangle_pts, circle_pts
-  // to it
   var data = {
     pencil_pts: pencil_pts,
     line_pts: line_pts,
@@ -276,25 +277,19 @@ document.getElementById("save_to_file").addEventListener("click", (e) => {
 });
 
 document.getElementById("load_from_file").addEventListener("click", (e) => {
-  // find file canva_data.json and load pencil_pts, line_pts, rectangle_pts, circle_pts
-  // from it
-  var file = document.getElementById("file_input").files[0];
-  var reader = new FileReader();
-  reader.onload = function (e) {
-    var contents = e.target.result;
-    var data = JSON.parse(contents);
-    // load the data
-    pencil_pts = data.pencil_pts;
-    line_pts = data.line_pts;
-    rectangle_pts = data.rectangle_pts;
-    circle_pts = data.circle_pts;
-    // draw the data
-    draw_data();
-  };
-  reader.readAsText(file);
+  console.log("load_from_file");
+  fetch("./canva_data.json")
+    .then((response) => response.json())
+    .then((data) => {
+      pencil_pts = data.pencil_pts;
+      line_pts = data.line_pts;
+      rectangle_pts = data.rectangle_pts;
+      circle_pts = data.circle_pts;
+      draw_all();
+    });
 });
 
-draw_data = function () {
+draw_all = function () {
   draw_pencil();
 
   for (let i = 0; i < line_pts.length; i++) {
@@ -312,7 +307,6 @@ draw_data = function () {
 };
 
 draw_line = function (x1, y1, x2, y2) {
-  line_pts.push({ x1: x1, y1: y1, x2: x2, y2: y2 });
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
@@ -321,7 +315,6 @@ draw_line = function (x1, y1, x2, y2) {
 };
 
 draw_rectangle = function (x, y, width, height) {
-  rectangle_pts.push({ x: x, y: y, width: width, height: height });
   ctx.beginPath();
   ctx.rect(x, y, width, height);
   ctx.stroke();
@@ -329,7 +322,6 @@ draw_rectangle = function (x, y, width, height) {
 };
 
 draw_circle = function (x, y, radius) {
-  circle_pts.push({ x: x, y: y, radius: radius });
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, 2 * Math.PI);
   ctx.stroke();
