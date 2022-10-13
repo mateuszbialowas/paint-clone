@@ -36,36 +36,16 @@ rectangle_pts = [];
 circle_pts = [];
 line_pts = [];
 
-/* Drawing on Paint App */
-tmp_ctx.lineWidth = 3;
-tmp_ctx.lineJoin = "round";
-tmp_ctx.lineCap = "round";
-tmp_ctx.strokeStyle = "black";
-tmp_ctx.fillStyle = "black";
-
 // paint functions
 var paint_pencil = function (e) {
   mouse.x = typeof e.offsetX !== "undefined" ? e.offsetX : e.layerX;
   mouse.y = typeof e.offsetY !== "undefined" ? e.offsetY : e.layerY;
-  //console.log(mouse.x + " "+mouse.y);
   // Saving all the points in an array
   ppts.push({ x: mouse.x, y: mouse.y });
-      pencil_pts.push({ x: mouse.x, y: mouse.y });
-
-  if (ppts.length < 3) {
-    var b = ppts[0];
-    tmp_ctx.beginPath();
-    //ctx.moveTo(b.x, b.y);
-    //ctx.lineTo(b.x+50, b.y+50);
-    tmp_ctx.arc(b.x, b.y, tmp_ctx.lineWidth / 2, 0, Math.PI * 2, !0);
-    tmp_ctx.fill();
-    tmp_ctx.closePath();
-    return;
-  }
+  pencil_pts.push({ x: mouse.x, y: mouse.y });
 
   // Tmp canvas is always cleared up before drawing.
-  tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
-
+  clear_tmp_ctx();
   tmp_ctx.beginPath();
   tmp_ctx.moveTo(ppts[0].x, ppts[0].y);
 
@@ -78,7 +58,7 @@ var paint_line = function (e) {
   mouse.x = typeof e.offsetX !== "undefined" ? e.offsetX : e.layerX;
   mouse.y = typeof e.offsetY !== "undefined" ? e.offsetY : e.layerY;
   // Tmp canvas is always cleared up before drawing.
-  tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
+  clear_tmp_ctx();
 
   tmp_ctx.beginPath();
   tmp_ctx.moveTo(start_mouse.x, start_mouse.y);
@@ -106,7 +86,7 @@ var paint_rectangle = function (e) {
   mouse.x = typeof e.offsetX !== "undefined" ? e.offsetX : e.layerX;
   mouse.y = typeof e.offsetY !== "undefined" ? e.offsetY : e.layerY;
   // Tmp canvas is always cleared up before drawing.
-  tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
+  clear_tmp_ctx();
   tmp_ctx.beginPath();
   tmp_ctx.moveTo(start_mouse.x, start_mouse.y);
 
@@ -122,7 +102,7 @@ var paint_circle = function (e) {
   mouse.x = typeof e.offsetX !== "undefined" ? e.offsetX : e.layerX;
   mouse.y = typeof e.offsetY !== "undefined" ? e.offsetY : e.layerY;
   // Tmp canvas is always cleared up before drawing.
-  tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
+  clear_tmp_ctx();
 
   var x = (mouse.x + start_mouse.x) / 2;
   var y = (mouse.y + start_mouse.y) / 2;
@@ -257,55 +237,34 @@ for (let i = 0; i < tools.length; i++) {
 document.getElementById("rectangle_form").addEventListener("submit", (e) => {
   e.preventDefault();
   form = e.target;
-  // get all inputs from form
   inputs = form.getElementsByTagName("input");
-  // get the values from the inputs
   values = {};
   for (let i = 0; i < inputs.length; i++) {
     values[inputs[i].name] = inputs[i].value;
   }
-
-  // draw the rectangle
-  ctx.beginPath();
-  ctx.rect(values["x"], values["y"], values["width"], values["height"]);
-  ctx.stroke();
-  ctx.closePath();
+  draw_rectangle(values["x"], values["y"], values["width"], values["height"]);
 });
 
 document.getElementById("circle_form").addEventListener("submit", (e) => {
   e.preventDefault();
   form = e.target;
-  // get all inputs from form
   inputs = form.getElementsByTagName("input");
-  // get the values from the inputs
   values = {};
   for (let i = 0; i < inputs.length; i++) {
     values[inputs[i].name] = inputs[i].value;
   }
-
-  // draw the rectangle
-  ctx.beginPath();
-  ctx.arc(values["x"], values["y"], values["radius"], 0, 2 * Math.PI);
-  ctx.stroke();
-  ctx.closePath();
+  draw_circle(values["x"], values["y"], values["radius"]);
 });
 
 document.getElementById("line_form").addEventListener("submit", (e) => {
   e.preventDefault();
   form = e.target;
-  // get all inputs from form
   inputs = form.getElementsByTagName("input");
-  // get the values from the inputs
   values = {};
   for (let i = 0; i < inputs.length; i++) {
     values[inputs[i].name] = inputs[i].value;
   }
-  // draw the rectangle
-  ctx.beginPath();
-  ctx.moveTo(values["x1"], values["y1"]);
-  ctx.lineTo(values["x2"], values["y2"]);
-  ctx.stroke();
-  ctx.closePath();
+  draw_line(values["x1"], values["y1"], values["x2"], values["y2"]);
 });
 
 document.getElementById("save_to_file").addEventListener("click", (e) => {
@@ -347,44 +306,55 @@ document.getElementById("load_from_file").addEventListener("click", (e) => {
   reader.readAsText(file);
 });
 
-var draw_data = function () {
-  for (let i = 0; i < pencil_pts.length; i++) {
-    ctx.beginPath();
-    ctx.moveTo(pencil_pts[i].x, pencil_pts[i].y);
-    for (let j = 1; j < pencil_pts[i].length; j++) {
-      ctx.lineTo(pencil_pts[i][j].x, pencil_pts[i][j].y);
-    }
-    ctx.stroke();
-    ctx.closePath();
-  }
+draw_data = function () {
+  draw_pencil();
+
   for (let i = 0; i < line_pts.length; i++) {
-    ctx.beginPath();
-    ctx.moveTo(line_pts[i].start.x, line_pts[i].start.y);
-    ctx.lineTo(line_pts[i].end.x, line_pts[i].end.y);
-    ctx.stroke();
-    ctx.closePath();
+    line = line_pts[i];
+    draw_line(line.x1, line.y1, line.x2, line.y2);
   }
   for (let i = 0; i < rectangle_pts.length; i++) {
-    ctx.beginPath();
-    ctx.rect(
-      rectangle_pts[i].x,
-      rectangle_pts[i].y,
-      rectangle_pts[i].width,
-      rectangle_pts[i].height
-    );
-    ctx.stroke();
-    ctx.closePath();
+    rectangle = rectangle_pts[i];
+    draw_rectangle(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
   }
   for (let i = 0; i < circle_pts.length; i++) {
-    ctx.beginPath();
-    ctx.arc(
-      circle_pts[i].x,
-      circle_pts[i].y,
-      circle_pts[i].radius,
-      0,
-      2 * Math.PI
-    );
-    ctx.stroke();
-    ctx.closePath();
+    circle = circle_pts[i];
+    draw_circle(circle.x, circle.y, circle.radius);
   }
+};
+
+draw_line = function (x1, y1, x2, y2) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.closePath();
+};
+
+draw_rectangle = function (x, y, width, height) {
+  ctx.beginPath();
+  ctx.rect(x, y, width, height);
+  ctx.stroke();
+  ctx.closePath();
+};
+
+draw_circle = function (x, y, radius) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.closePath();
+};
+
+draw_pencil = function () {
+  ctx.beginPath();
+  ctx.moveTo(pencil_pts[0].x, pencil_pts[0].y);
+
+  for (var i = 0; i < pencil_pts.length; i++)
+    ctx.lineTo(pencil_pts[i].x, pencil_pts[i].y);
+
+  ctx.stroke();
+};
+
+clear_tmp_ctx = function () {
+  tmp_ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
