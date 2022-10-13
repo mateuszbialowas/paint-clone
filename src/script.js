@@ -9,18 +9,6 @@ canvas.height = sketch.offsetHeight;
 tmp_canvas.width = canvas.width;
 tmp_canvas.height = canvas.height;
 
-var undo_canvas = [];
-var undo_canvas_len = 7;
-for (var i = 0; i < undo_canvas_len; ++i) {
-  var ucan = document.createElement("canvas");
-  ucan.width = canvas.width;
-  ucan.height = canvas.height;
-  var uctx = ucan.getContext("2d");
-  undo_canvas.push({ ucan: ucan, uctx: uctx, redoable: false });
-}
-
-var undo_canvas_top = 0;
-
 var ctx = canvas.getContext("2d");
 var tmp_ctx = tmp_canvas.getContext("2d");
 tmp_canvas.id = "tmp_canvas";
@@ -35,6 +23,11 @@ pencil_pts = [];
 rectangle_pts = [];
 circle_pts = [];
 line_pts = [];
+
+// Current figures
+current_rectangle = null;
+current_line = null;
+current_circle = null;
 
 // paint functions
 var paint_pencil = function (e) {
@@ -65,21 +58,13 @@ var paint_line = function (e) {
   tmp_ctx.lineTo(mouse.x, mouse.y);
   tmp_ctx.stroke();
   tmp_ctx.closePath();
-  // replace line_pts where start is the same start_mouse and replace with new end_mouse
-  line_pts = line_pts.map((line) =>
-    line.start.x === start_mouse.x && line.start.y === start_mouse.y
-      ? {
-          start: {
-            x: start_mouse.x,
-            y: start_mouse.y,
-          },
-          end: {
-            x: mouse.x,
-            y: mouse.y,
-          },
-        }
-      : line
-  );
+
+  current_line = {
+    x1: start_mouse.x,
+    y1: start_mouse.y,
+    x2: mouse.x,
+    y2: mouse.y,
+  };
 };
 
 var paint_rectangle = function (e) {
@@ -96,6 +81,13 @@ var paint_rectangle = function (e) {
   var height = Math.abs(mouse.y - start_mouse.y);
   tmp_ctx.strokeRect(x, y, width, height);
   tmp_ctx.closePath();
+
+  current_rectangle = {
+    x: x,
+    y: y,
+    width: width,
+    height: height,
+  };
 };
 
 var paint_circle = function (e) {
@@ -118,6 +110,12 @@ var paint_circle = function (e) {
   // tmp_ctx.arc(x, y, 5, 0, Math.PI*2, false);
   tmp_ctx.stroke();
   tmp_ctx.closePath();
+
+  current_circle = {
+    x: start_mouse.x,
+    y: start_mouse.y,
+    radius: r,
+  };
 };
 
 // Choose tool
@@ -153,10 +151,6 @@ tmp_canvas.addEventListener(
     if (tool === "pencil") {
       tmp_canvas.addEventListener("mousemove", paint_pencil, false);
     } else if (tool === "line") {
-      line_pts.push({
-        start: { x: start_mouse.x, y: start_mouse.y },
-        end: { x: mouse.x, y: mouse.y },
-      });
       tmp_canvas.addEventListener("mousemove", paint_line, false);
     } else if (tool === "rectangle") {
       tmp_canvas.addEventListener("mousemove", paint_rectangle, false);
@@ -187,20 +181,16 @@ tmp_canvas.addEventListener(
   "mouseup",
   function () {
     tmp_canvas.removeEventListener("mousemove", tools_func[tool], false);
-
     ctx.drawImage(tmp_canvas, 0, 0);
-    // keep the image in the undo_canvas
-    undo_canvas_top = next_undo_canvas(undo_canvas_top);
-    var uctx = undo_canvas[undo_canvas_top]["uctx"];
-    uctx.clearRect(0, 0, canvas.width, canvas.height);
-    uctx.drawImage(canvas, 0, 0);
-    undo_canvas[undo_canvas_top]["redoable"] = false;
-
-    // Clearing tmp canvas
     clear_tmp_ctx();
-
-    // Emptying up Pencil Points
     ppts = [];
+    if (tool === "line") {
+      line_pts.push(current_line);
+    } else if (tool === "rectangle") {
+      rectangle_pts.push(current_rectangle);
+    } else if (tool === "circle") {
+      circle_pts.push(current_circle);
+    }
   },
   false
 );
@@ -322,6 +312,7 @@ draw_data = function () {
 };
 
 draw_line = function (x1, y1, x2, y2) {
+  line_pts.push({ x1: x1, y1: y1, x2: x2, y2: y2 });
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
@@ -330,6 +321,7 @@ draw_line = function (x1, y1, x2, y2) {
 };
 
 draw_rectangle = function (x, y, width, height) {
+  rectangle_pts.push({ x: x, y: y, width: width, height: height });
   ctx.beginPath();
   ctx.rect(x, y, width, height);
   ctx.stroke();
@@ -337,6 +329,7 @@ draw_rectangle = function (x, y, width, height) {
 };
 
 draw_circle = function (x, y, radius) {
+  circle_pts.push({ x: x, y: y, radius: radius });
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, 2 * Math.PI);
   ctx.stroke();
@@ -355,4 +348,4 @@ draw_pencil = function () {
 
 clear_tmp_ctx = function () {
   tmp_ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
+};
