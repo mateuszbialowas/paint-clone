@@ -31,11 +31,6 @@ var start_mouse = { x: 0, y: 0 };
 
 // Pencil Points
 var ppts = [];
-form_mode = false;
-
-document.getElementById("form_mode_toggle").addEventListener("click", function () {
-  form_mode = !form_mode;
-});
 
 /* Drawing on Paint App */
 tmp_ctx.lineWidth = 3;
@@ -142,7 +137,6 @@ document
     var target = event.target;
 
     tool = target.id;
-    tmp_canvas.removeEventListener("mousemove", move_eraser, false);
     tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
   });
 
@@ -156,9 +150,7 @@ tmp_canvas.addEventListener(
     start_mouse.y = mouse.y;
     tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
 
-    if (form_mode) {
-      console.log("asdf");
-    } else if (tool === "pencil") {
+    if (tool === "pencil") {
       tmp_canvas.addEventListener("mousemove", paint_pencil, false);
       ppts.push({ x: mouse.x, y: mouse.y });
       paint_pencil(e);
@@ -237,3 +229,58 @@ for (let i = 0; i < tools.length; i++) {
     e.target.classList.add("ring-violet-300");
   });
 }
+
+document.getElementById("rectangle_form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  form = e.target;
+  // get all inputs from form
+  inputs = form.getElementsByTagName("input");
+  // get the values from the inputs
+  values = {};
+  for (let i = 0; i < inputs.length; i++) {
+    values[inputs[i].name] = inputs[i].value;
+  }
+
+  console.log({ values });
+  // draw the rectangle
+  ctx.beginPath();
+  ctx.rect(values["x"], values["y"], values["width"], values["height"]);
+  ctx.stroke();
+  ctx.closePath();
+});
+
+document.getElementById("circle_form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  form = e.target;
+  // get all inputs from form
+  inputs = form.getElementsByTagName("input");
+  // get the values from the inputs
+  values = {};
+  for (let i = 0; i < inputs.length; i++) {
+    values[inputs[i].name] = inputs[i].value;
+  }
+
+  // draw the rectangle
+  ctx.beginPath();
+  ctx.arc(values["x"], values["y"], values["radius"], 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.closePath();
+});
+
+document.getElementById("line_form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  form = e.target;
+  // get all inputs from form
+  inputs = form.getElementsByTagName("input");
+  // get the values from the inputs
+  values = {};
+  for (let i = 0; i < inputs.length; i++) {
+    values[inputs[i].name] = inputs[i].value;
+  }
+  // draw the rectangle
+  ctx.beginPath();
+  ctx.moveTo(values["x1"], values["y1"]);
+  ctx.lineTo(values["x2"], values["y2"]);
+  ctx.stroke();
+  ctx.closePath();
+});
