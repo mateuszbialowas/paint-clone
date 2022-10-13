@@ -148,12 +148,10 @@ tmp_canvas.addEventListener(
     mouse.y = typeof e.offsetY !== "undefined" ? e.offsetY : e.layerY;
     start_mouse.x = mouse.x;
     start_mouse.y = mouse.y;
-    tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
+    clear_tmp_ctx();
 
     if (tool === "pencil") {
       tmp_canvas.addEventListener("mousemove", paint_pencil, false);
-      ppts.push({ x: mouse.x, y: mouse.y });
-      paint_pencil(e);
     } else if (tool === "line") {
       line_pts.push({
         start: { x: start_mouse.x, y: start_mouse.y },
@@ -199,7 +197,7 @@ tmp_canvas.addEventListener(
     undo_canvas[undo_canvas_top]["redoable"] = false;
 
     // Clearing tmp canvas
-    tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
+    clear_tmp_ctx();
 
     // Emptying up Pencil Points
     ppts = [];
