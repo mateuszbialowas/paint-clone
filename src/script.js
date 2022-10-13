@@ -31,6 +31,10 @@ var start_mouse = { x: 0, y: 0 };
 
 // Pencil Points
 var ppts = [];
+pencil_pts = [];
+rectangle_pts = [];
+circle_pts = [];
+line_pts = [];
 
 /* Drawing on Paint App */
 tmp_ctx.lineWidth = 3;
@@ -46,6 +50,7 @@ var paint_pencil = function (e) {
   //console.log(mouse.x + " "+mouse.y);
   // Saving all the points in an array
   ppts.push({ x: mouse.x, y: mouse.y });
+      pencil_pts.push({ x: mouse.x, y: mouse.y });
 
   if (ppts.length < 3) {
     var b = ppts[0];
@@ -80,6 +85,21 @@ var paint_line = function (e) {
   tmp_ctx.lineTo(mouse.x, mouse.y);
   tmp_ctx.stroke();
   tmp_ctx.closePath();
+  // replace line_pts where start is the same start_mouse and replace with new end_mouse
+  line_pts = line_pts.map((line) =>
+    line.start.x === start_mouse.x && line.start.y === start_mouse.y
+      ? {
+          start: {
+            x: start_mouse.x,
+            y: start_mouse.y,
+          },
+          end: {
+            x: mouse.x,
+            y: mouse.y,
+          },
+        }
+      : line
+  );
 };
 
 var paint_rectangle = function (e) {
@@ -155,6 +175,10 @@ tmp_canvas.addEventListener(
       ppts.push({ x: mouse.x, y: mouse.y });
       paint_pencil(e);
     } else if (tool === "line") {
+      line_pts.push({
+        start: { x: start_mouse.x, y: start_mouse.y },
+        end: { x: mouse.x, y: mouse.y },
+      });
       tmp_canvas.addEventListener("mousemove", paint_line, false);
     } else if (tool === "rectangle") {
       tmp_canvas.addEventListener("mousemove", paint_rectangle, false);
@@ -241,7 +265,6 @@ document.getElementById("rectangle_form").addEventListener("submit", (e) => {
     values[inputs[i].name] = inputs[i].value;
   }
 
-  console.log({ values });
   // draw the rectangle
   ctx.beginPath();
   ctx.rect(values["x"], values["y"], values["width"], values["height"]);
@@ -284,3 +307,84 @@ document.getElementById("line_form").addEventListener("submit", (e) => {
   ctx.stroke();
   ctx.closePath();
 });
+
+document.getElementById("save_to_file").addEventListener("click", (e) => {
+  // find file canva_data.json and save pencil_pts, line_pts, rectangle_pts, circle_pts
+  // to it
+  var data = {
+    pencil_pts: pencil_pts,
+    line_pts: line_pts,
+    rectangle_pts: rectangle_pts,
+    circle_pts: circle_pts,
+  };
+  var json = JSON.stringify(data);
+
+  var blob = new Blob([json], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.download = "canvas_data.json";
+  a.href = url;
+  a.click();
+  a.remove();
+});
+
+document.getElementById("load_from_file").addEventListener("click", (e) => {
+  // find file canva_data.json and load pencil_pts, line_pts, rectangle_pts, circle_pts
+  // from it
+  var file = document.getElementById("file_input").files[0];
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var contents = e.target.result;
+    var data = JSON.parse(contents);
+    // load the data
+    pencil_pts = data.pencil_pts;
+    line_pts = data.line_pts;
+    rectangle_pts = data.rectangle_pts;
+    circle_pts = data.circle_pts;
+    // draw the data
+    draw_data();
+  };
+  reader.readAsText(file);
+});
+
+var draw_data = function () {
+  for (let i = 0; i < pencil_pts.length; i++) {
+    ctx.beginPath();
+    ctx.moveTo(pencil_pts[i].x, pencil_pts[i].y);
+    for (let j = 1; j < pencil_pts[i].length; j++) {
+      ctx.lineTo(pencil_pts[i][j].x, pencil_pts[i][j].y);
+    }
+    ctx.stroke();
+    ctx.closePath();
+  }
+  for (let i = 0; i < line_pts.length; i++) {
+    ctx.beginPath();
+    ctx.moveTo(line_pts[i].start.x, line_pts[i].start.y);
+    ctx.lineTo(line_pts[i].end.x, line_pts[i].end.y);
+    ctx.stroke();
+    ctx.closePath();
+  }
+  for (let i = 0; i < rectangle_pts.length; i++) {
+    ctx.beginPath();
+    ctx.rect(
+      rectangle_pts[i].x,
+      rectangle_pts[i].y,
+      rectangle_pts[i].width,
+      rectangle_pts[i].height
+    );
+    ctx.stroke();
+    ctx.closePath();
+  }
+  for (let i = 0; i < circle_pts.length; i++) {
+    ctx.beginPath();
+    ctx.arc(
+      circle_pts[i].x,
+      circle_pts[i].y,
+      circle_pts[i].radius,
+      0,
+      2 * Math.PI
+    );
+    ctx.stroke();
+    ctx.closePath();
+  }
+}
